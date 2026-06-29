@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nacho Poker Coach - Decisión Rápida</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * { -webkit-user-select: none; user-select: none; }
+        body { overscroll-behavior: none; }
+        
+        .btn-active {
+            @apply bg-emerald-500 border-emerald-300 text-white shadow-lg scale-105;
+        }
+
+        .btn-pos {
+            @apply px-3 py-2 rounded-lg font-bold text-xs transition-all duration-150 border-2 bg-gray-700 border-gray-600 hover:bg-gray-600 cursor-pointer active:scale-95;
+        }
+
+        .btn-hand {
+            @apply px-4 py-3 rounded-xl font-bold text-sm transition-all duration-150 border-2 bg-gray-700 border-gray-600 hover:bg-gray-600 cursor-pointer active:scale-95 w-full;
+        }
+
+        .glow-green { box-shadow: 0 0 30px rgba(16, 185, 129, 0.6), inset 0 0 20px rgba(16, 185, 129, 0.2); }
+        .glow-red { box-shadow: 0 0 30px rgba(239, 68, 68, 0.6), inset 0 0 20px rgba(239, 68, 68, 0.2); }
+        .glow-blue { box-shadow: 0 0 30px rgba(59, 130, 246, 0.6), inset 0 0 20px rgba(59, 130, 246, 0.2); }
+        .glow-orange { box-shadow: 0 0 30px rgba(249, 115, 22, 0.6), inset 0 0 20px rgba(249, 115, 22, 0.2); }
+
+        .decision-box {
+            @apply bg-gray-800 rounded-2xl p-5 border-4 border-gray-700 transition-all duration-200 min-h-32;
+        }
+
+        .decision-title {
+            @apply text-4xl font-black tracking-tight leading-tight;
+        }
+
+        .decision-desc {
+            @apply text-sm text-gray-300 leading-relaxed mt-2;
+        }
+
+        .tag-action {
+            @apply text-[10px] font-black uppercase px-2 py-1 rounded bg-emerald-900 text-emerald-300;
+        }
+        .tag-defense {
+            @apply text-[10px] font-black uppercase px-2 py-1 rounded bg-red-900 text-red-300;
+        }
+        .tag-caution {
+            @apply text-[10px] font-black uppercase px-2 py-1 rounded bg-blue-900 text-blue-300;
+        }
+        .tag-extreme {
+            @apply text-[10px] font-black uppercase px-2 py-1 rounded bg-orange-900 text-orange-300;
+        }
+
+        /* Tabla de posiciones simplificada */
+        .position-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .position-btn {
+            @apply btn-pos text-center;
+        }
+
+        .hint {
+            @apply text-[9px] text-gray-500 text-center mt-1;
+        }
+
+        /* Animación de pulse sutil */
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        .pulse-glow {
+            animation: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col font-sans">
+
+    <div class="flex-grow container mx-auto px-3 py-4 max-w-xl">
+        
+        <!-- HEADER COMPACTO -->
+        <header class="mb-4 text-center">
+            <h1 class="text-xl font-black text-emerald-400 tracking-tighter">⚡ NACHO POKER COACH</h1>
+            <p class="text-[10px] text-gray-500 uppercase mt-1">Decisión en segundos</p>
+        </header>
+
+        <!-- POSICIONES (Grid compacto) -->
+        <section class="mb-5">
+            <p class="text-xs font-bold text-gray-400 uppercase mb-3 text-center">POSICIÓN (1-6)</p>
+            <div class="position-grid">
+                <button onclick="setPos('UTG')" id="pos-UTG" class="position-btn" data-key="1">
+                    <div>UTG</div>
+                    <div class="hint">1</div>
+                </button>
+                <button onclick="setPos('MP')" id="pos-MP" class="position-btn" data-key="2">
+                    <div>MP</div>
+                    <div class="hint">2</div>
+                </button>
+                <button onclick="setPos('CO')" id="pos-CO" class="position-btn" data-key="3">
+                    <div>CO</div>
+                    <div class="hint">3</div>
+                </button>
+                <button onclick="setPos('BTN')" id="pos-BTN" class="position-btn bg-amber-700 border-amber-600 hover:bg-amber-600" data-key="4">
+                    <div>BTN 🎯</div>
+                    <div class="hint">4</div>
+                </button>
+                <button onclick="setPos('SB')" id="pos-SB" class="position-btn" data-key="5">
+                    <div>SB</div>
+                    <div class="hint">5</div>
+                </button>
+                <button onclick="setPos('BB')" id="pos-BB" class="position-btn" data-key="6">
+                    <div>BB</div>
+                    <div class="hint">6</div>
+                </button>
+            </div>
+        </section>
+
+        <!-- CARTAS (Botones grandes) -->
+        <section class="mb-5">
+            <p class="text-xs font-bold text-gray-400 uppercase mb-3 text-center">Tкарты (Q-W-E-R)</p>
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="setHand('premium')" id="hand-premium" class="btn-hand" data-key="q">
+                    💎 PREMIUM
+                </button>
+                <button onclick="setHand('strong')" id="hand-strong" class="btn-hand" data-key="w">
+                    🔥 FUERTES
+                </button>
+                <button onclick="setHand('speculative')" id="hand-speculative" class="btn-hand" data-key="e">
+                    🎨 PROYECTOS
+                </button>
+                <button onclick="setHand('weak')" id="hand-weak" class="btn-hand" data-key="r">
+                    🗑️ BASURA
+                </button>
+            </div>
+        </section>
+
+        <!-- ACCIÓN (Botones grandes) -->
+        <section class="mb-5">
+            <p class="text-xs font-bold text-gray-400 uppercase mb-3 text-center">ACCIÓN (A-S-D-F)</p>
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="setAction('clean')" id="action-clean" class="btn-hand" data-key="a">
+                    🟢 LIMPIA
+                </button>
+                <button onclick="setAction('limpers')" id="action-limpers" class="btn-hand" data-key="s">
+                    👥 LIMPERS
+                </button>
+                <button onclick="setAction('raise')" id="action-raise" class="btn-hand" data-key="d">
+                    📈 SUBIDA
+                </button>
+                <button onclick="setAction('allin')" id="action-allin" class="btn-hand" data-key="f">
+                    💥 ALL-IN
+                </button>
+            </div>
+        </section>
+
+        <!-- PANEL DE DECISIÓN (GRANDE Y CLARO) -->
+        <div id="decision-panel" class="decision-box glow-green border-emerald-500">
+            <div class="flex items-center justify-between mb-3">
+                <span id="decision-tag" class="tag-action pulse-glow">ESPERANDO</span>
+                <span id="context-info" class="text-[10px] text-gray-400 font-bold">Posición: UTG | Carta: —</span>
+            </div>
+            <h2 id="decision-title" class="decision-title text-emerald-400">?</h2>
+            <p id="decision-desc" class="decision-desc">Seleccioná posición y cartas para obtener tu decisión.</p>
+        </div>
+
+    </div>
+
+    <!-- FOOTER MINIMIZADO -->
+    <footer class="p-3 border-t border-gray-800 bg-gray-900 text-center">
+        <span class="text-[9px] font-bold text-gray-600">⚙️ Atajos: Números para posición (1-6) | QWER cartas | ASDF acción</span>
+    </footer>
+
+    <script>
+        let currentPos = 'UTG';
+        let currentHand = null;
+        let currentAction = null;
+
+        // Mapeo de teclas para atajos
+        const keyMap = {
+            '1': () => setPos('UTG'),
+            '2': () => setPos('MP'),
+            '3': () => setPos('CO'),
+            '4': () => setPos('BTN'),
+            '5': () => setPos('SB'),
+            '6': () => setPos('BB'),
+            'q': () => setHand('premium'),
+            'w': () => setHand('strong'),
+            'e': () => setHand('speculative'),
+            'r': () => setHand('weak'),
+            'a': () => setAction('clean'),
+            's': () => setAction('limpers'),
+            'd': () => setAction('raise'),
+            'f': () => setAction('allin'),
+        };
+
+        // Atajos de teclado
+        document.addEventListener('keydown', (e) => {
+            const key = e.key.toLowerCase();
+            if (keyMap[key]) {
+                e.preventDefault();
+                keyMap[key]();
+            }
+        });
+
+        function setPos(pos) {
+            currentPos = pos;
+            document.querySelectorAll('button[id^="pos-"]').forEach(btn => {
+                btn.classList.remove('btn-active');
+            });
+            document.getElementById('pos-' + pos).classList.add('btn-active');
+            updateDecision();
+        }
+
+        function setHand(hand) {
+            currentHand = hand;
+            document.querySelectorAll('button[id^="hand-"]').forEach(btn => {
+                btn.classList.remove('btn-active');
+            });
+            document.getElementById('hand-' + hand).classList.add('btn-active');
+            updateDecision();
+        }
+
+        function setAction(action) {
+            currentAction = action;
+            document.querySelectorAll('button[id^="action-"]').forEach(btn => {
+                btn.classList.remove('btn-active');
+            });
+            document.getElementById('action-' + action).classList.add('btn-active');
+            updateDecision();
+        }
+
+        function updateDecision() {
+            const context = document.getElementById('context-info');
+            const handLabel = currentHand ? 
+                {'premium': 'Premium', 'strong': 'Fuertes', 'speculative': 'Proyectos', 'weak': 'Basura'}[currentHand] 
+                : '—';
+            context.innerText = `Posición: ${currentPos} | Carta: ${handLabel}`;
+
+            if (!currentHand || !currentAction) {
+                return;
+            }
+
+            const panel = document.getElementById('decision-panel');
+            panel.classList.remove('glow-green', 'glow-red', 'glow-blue', 'glow-orange', 
+                                   'border-emerald-500', 'border-red-500', 'border-blue-500', 'border-orange-500');
+
+            if (currentHand === 'weak') {
+                applyDecision('red', 'FOLD ❌', 'Sin valor. Guardá fichas para mejor oportunidad.');
+                return;
+            }
+
+            if (currentHand === 'premium') {
+                if (currentAction === 'allin') {
+                    applyDecision('orange', 'PAGAR 🎯', 'Tenés un monstruo. Dobleate.');
+                } else if (currentAction === 'raise') {
+                    applyDecision('green', 'RESUBIR 🚀', '3-BET. Presiona ahora.');
+                } else {
+                    applyDecision('green', 'SUBIR ⬆️', 'Apertura por valor. +1 BB por limper.');
+                }
+                return;
+            }
+
+            if (currentHand === 'strong') {
+                if (currentAction === 'allin') {
+                    if (['BTN', 'CO'].includes(currentPos)) {
+                        applyDecision('blue', 'PAGAR 🤔', 'Solo vs agresivos. Foldea QQ/AQ si es sólido.');
+                    } else {
+                        applyDecision('red', 'FOLD ❌', 'All-in off-position es muy riesgoso.');
+                    }
+                } else if (currentAction === 'raise') {
+                    applyDecision('blue', 'PAGAR 📞', 'Mantén el pozo chico. Juega en posición.');
+                } else {
+                    applyDecision('green', 'SUBIR 💪', 'Iniciativa preflop. 2.2 BB.');
+                }
+                return;
+            }
+
+            if (currentHand === 'speculative') {
+                if (currentAction === 'raise' || currentAction === 'allin') {
+                    applyDecision('red', 'FOLD ❌', 'Demasiado caro para proyecto.');
+                } else {
+                    if (['BTN', 'CO', 'SB'].includes(currentPos)) {
+                        applyDecision('blue', 'LIMP/COMPLETAR 👀', 'Mirá flop barato. Set/proyecto = juega.');
+                    } else {
+                        applyDecision('red', 'FOLD ❌', 'Off-position = trampa. Espera botón.');
+                    }
+                }
+                return;
+            }
+        }
+
+        function applyDecision(color, text, description) {
+            const panel = document.getElementById('decision-panel');
+            const title = document.getElementById('decision-title');
+            const desc = document.getElementById('decision-desc');
+            const tag = document.getElementById('decision-tag');
+
+            title.innerText = text;
+            desc.innerText = description;
+            
+            const colorMap = {
+                'green': { glow: 'glow-green', border: 'border-emerald-500', title: 'text-emerald-400', tag: 'tag-action' },
+                'red': { glow: 'glow-red', border: 'border-red-500', title: 'text-red-400', tag: 'tag-defense' },
+                'blue': { glow: 'glow-blue', border: 'border-blue-500', title: 'text-blue-400', tag: 'tag-caution' },
+                'orange': { glow: 'glow-orange', border: 'border-orange-500', title: 'text-orange-400', tag: 'tag-extreme' },
+            };
+
+            const colors = colorMap[color];
+            panel.classList.add(colors.glow, colors.border);
+            title.className = `decision-title ${colors.title}`;
+            tag.className = colors.tag;
+        }
+
+        // Inicializar
+        setPos('UTG');
+    </script>
+</body>
+</html>
